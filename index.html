@@ -1,0 +1,1549 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LogiTech AI - Smart Logistics & Shipment Management</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              brand: {
+                50: "#eff6ff",
+                500: "#3b82f6",
+                600: "#2563eb",
+                700: "#1d4ed8",
+              },
+              darkbg: "#0f172a",
+              cardbg: "#1e293b",
+              cardborder: "#334155",
+            },
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <!-- FontAwesome Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <!-- Chart.js for Telemetry & Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #0f172a;
+        color: #f8fafc;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f172a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+      }
+      .glass-panel {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .glow-blue {
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+      }
+      .glow-emerald {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen flex flex-col justify-between overflow-x-hidden antialiased"
+  >
+    <!-- TOP HEADER -->
+    <header
+      class="sticky top-0 z-30 glass-panel border-b border-slate-800 px-4 lg:px-8 py-3"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/30"
+          >
+            <i class="fa-solid font-bold fa-network-wired text-xl"></i>
+          </div>
+          <div>
+            <h1
+              class="text-xl font-bold tracking-wider bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent"
+            >
+              LogiTech <span class="text-blue-500 font-extrabold">AI</span>
+            </h1>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Distributed Logistics and Shipment Management System
+            </p>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="hidden md:flex items-center flex-1 max-w-md mx-6">
+          <div class="relative w-full">
+            <span
+              class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400"
+            >
+              <i class="fa-solid fa-magnifying-glass text-sm"></i>
+            </span>
+            <input
+              type="text"
+              id="global-search"
+              oninput="handleSearch(this.value)"
+              placeholder="Search Tracking ID, Origin, Destination, Carrier..."
+              class="w-full pl-10 pr-4 py-2 bg-slate-900/80 border border-slate-700/80 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder-slate-500"
+            />
+          </div>
+        </div>
+
+        <!-- Action Buttons & Profile -->
+        <div class="flex items-center gap-3">
+          <button
+            onclick="openModal('new-shipment-modal')"
+            class="hidden sm:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95"
+          >
+            <i class="fa-solid fa-plus text-xs"></i>
+            <span>New Shipment</span>
+          </button>
+          <button
+            onclick="focusTracking()"
+            class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs sm:text-sm px-3.5 py-2 rounded-xl border border-slate-700 transition-all active:scale-95"
+          >
+            <i class="fa-solid fa-crosshairs text-blue-400 text-xs"></i>
+            <span class="hidden sm:inline">Track Package</span>
+          </button>
+
+          <!-- Status Notifications Dropdown Container -->
+          <div class="relative">
+            <button
+              onclick="toggleNotifications()"
+              class="relative p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all"
+            >
+              <i class="fa-regular fa-bell"></i>
+              <span
+                class="absolute top-1 right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-slate-900 animate-pulse"
+              ></span>
+            </button>
+            <!-- Notifications Panel -->
+            <div
+              id="notifications-panel"
+              class="hidden absolute right-0 mt-3 w-80 sm:w-96 glass-panel bg-slate-900/95 border border-slate-700 rounded-2xl shadow-2xl p-4 z-50"
+            >
+              <div
+                class="flex items-center justify-between pb-3 border-b border-slate-800"
+              >
+                <h3 class="text-sm font-semibold text-slate-200">
+                  System Telemetry Alerts
+                </h3>
+                <span class="text-xs text-blue-400 font-medium">3 New</span>
+              </div>
+              <div class="space-y-3 mt-3 max-h-64 overflow-y-auto pr-1">
+                <div
+                  class="flex items-start gap-3 p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition"
+                >
+                  <div
+                    class="p-2 rounded-lg bg-amber-500/10 text-amber-400 mt-0.5"
+                  >
+                    <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold text-slate-200">
+                      Customs Clearance Delay
+                    </p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                      Shipment
+                      <span class="font-mono text-blue-400">#SH-8942</span> held
+                      at Rotterdam Port due to documentation check.
+                    </p>
+                    <span class="text-[10px] text-slate-500 mt-1 block"
+                      >12 min ago</span
+                    >
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-3 p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition"
+                >
+                  <div
+                    class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 mt-0.5"
+                  >
+                    <i class="fa-solid fa-leaf text-xs"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold text-slate-200">
+                      Eco-Route Re-calculated
+                    </p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                      AI reduced carbon footprint by 14% for Pacific Corridor
+                      flight
+                      <span class="font-mono text-blue-400">#SH-9021</span>.
+                    </p>
+                    <span class="text-[10px] text-slate-500 mt-1 block"
+                      >45 min ago</span
+                    >
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-3 p-2.5 rounded-xl bg-slate-800/50 hover:bg-slate-800 transition"
+                >
+                  <div
+                    class="p-2 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5"
+                  >
+                    <i class="fa-solid fa-snowflake text-xs"></i>
+                  </div>
+                  <div>
+                    <p class="text-xs font-semibold text-slate-200">
+                      Cold Chain Temp Stabilized
+                    </p>
+                    <p class="text-[11px] text-slate-400 mt-0.5">
+                      BioMed Cargo
+                      <span class="font-mono text-blue-400">#SH-7710</span>
+                      cooling adjusted automatically to 4.2°C.
+                    </p>
+                    <span class="text-[10px] text-slate-500 mt-1 block"
+                      >1 hr ago</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- User Profile -->
+          <div class="flex items-center gap-3 pl-2 border-l border-slate-800">
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+              alt="Avatar"
+              class="w-9 h-9 rounded-xl object-cover ring-2 ring-blue-500/30"
+            />
+            <div class="hidden xl:block text-left">
+              <div class="text-xs font-semibold text-slate-200">
+                Elena Rostova
+              </div>
+              <div class="text-[10px] text-slate-400">Head of Operations</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT DASHBOARD -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      <!-- 1. KEY METRICS CARDS -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Metric Card 1: Active Shipments -->
+        <div
+          class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-blue-500/40 transition-all duration-300"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400"
+              >Active Freight</span
+            >
+            <div class="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+              <i class="fa-solid fa-boxes-packing text-sm"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-slate-100" id="stat-active"
+              >1,482</span
+            >
+            <span
+              class="text-xs font-semibold text-emerald-400 flex items-center gap-1"
+            >
+              <i class="fa-solid fa-arrow-trend-up"></i> +12.4%
+            </span>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-500">
+            Air, Sea, Ground in transit
+          </div>
+        </div>
+
+        <!-- Metric Card 2: On-Time Delivery Rate -->
+        <div
+          class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-emerald-500/40 transition-all duration-300"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400"
+              >On-Time Delivery</span
+            >
+            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <i class="fa-solid fa-clock-rotate-left text-sm"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-slate-100" id="stat-ontime"
+              >98.6%</span
+            >
+            <span
+              class="text-xs font-semibold text-emerald-400 flex items-center gap-1"
+            >
+              <i class="fa-solid fa-circle-check"></i> Target 98%
+            </span>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-500">
+            AI dynamic SLA compliance
+          </div>
+        </div>
+
+        <!-- Metric Card 3: Fleet Utilization Rate -->
+        <div
+          class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition-all duration-300"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400"
+              >Fleet Utilization</span
+            >
+            <div class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+              <i class="fa-solid fa-truck-fast text-sm"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-slate-100" id="stat-fleet"
+              >91.2%</span
+            >
+            <span
+              class="text-xs font-semibold text-emerald-400 flex items-center gap-1"
+            >
+              <i class="fa-solid fa-arrow-trend-up"></i> +3.1%
+            </span>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-500">
+            3,410 / 3,740 Vehicles Active
+          </div>
+        </div>
+
+        <!-- Metric Card 4: Freight Cost Efficiency -->
+        <div
+          class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-purple-500/40 transition-all duration-300"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400"
+              >Freight Revenue / Cost</span
+            >
+            <div class="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+              <i class="fa-solid fa-chart-line text-sm"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-slate-100">$2.84M</span>
+            <span
+              class="text-xs font-semibold text-purple-400 flex items-center gap-1"
+            >
+              <i class="fa-solid fa-bolt"></i> +18% ROI
+            </span>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-500">
+            Optimized fuel spend
+          </div>
+        </div>
+
+        <!-- Metric Card 5: Carbon Footprint Savings -->
+        <div
+          class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-teal-500/40 transition-all duration-300 sm:col-span-2 lg:col-span-1"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-medium text-slate-400"
+              >Eco Carbon Offset</span
+            >
+            <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400">
+              <i class="fa-solid fa-leaf text-sm"></i>
+            </div>
+          </div>
+          <div class="mt-3 flex items-baseline justify-between">
+            <span class="text-2xl font-bold text-teal-400" id="stat-co2"
+              >412.8 T</span
+            >
+            <span
+              class="text-[10px] px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-300 font-semibold uppercase"
+            >
+              AI Certified
+            </span>
+          </div>
+          <div class="mt-2 text-[11px] text-slate-500">
+            Saved through AI path optimization
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. LIVE SHIPMENT TRACKING & MAP VISUALIZER + AI PANEL GRID -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- MAP VISUALIZER (2 COLS) -->
+        <div
+          class="lg:col-span-2 glass-panel rounded-2xl border border-slate-800 p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden"
+        >
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4"
+          >
+            <div>
+              <div class="flex items-center gap-2">
+                <span
+                  class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"
+                ></span>
+                <h2 class="text-base font-semibold text-slate-100">
+                  Global Freight Route Network Simulation
+                </h2>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">
+                Real-time telemetry and active vessel route vectors
+              </p>
+            </div>
+
+            <!-- Map Legend Filters -->
+            <div class="flex items-center gap-2 text-[11px]">
+              <span
+                class="px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5"
+              >
+                <i class="fa-solid fa-plane text-[10px]"></i> Flight
+              </span>
+              <span
+                class="px-2.5 py-1 rounded-lg bg-teal-500/10 text-teal-400 border border-teal-500/20 flex items-center gap-1.5"
+              >
+                <i class="fa-solid fa-ship text-[10px]"></i> Vessel
+              </span>
+              <span
+                class="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5"
+              >
+                <i class="fa-solid fa-truck-front text-[10px]"></i> Truck
+              </span>
+            </div>
+          </div>
+
+          <!-- Canvas Visualizer Container -->
+          <div
+            class="relative w-full h-[320px] sm:h-[380px] rounded-xl bg-slate-950/80 border border-slate-800/80 overflow-hidden flex items-center justify-center"
+          >
+            <canvas
+              id="mapCanvas"
+              class="w-full h-full block cursor-crosshair"
+            ></canvas>
+
+            <!-- Floating Overlay Stats on Map -->
+            <div
+              class="absolute bottom-3 left-3 glass-panel px-3 py-2 rounded-xl border border-slate-700/60 text-xs hidden sm:flex items-center gap-4"
+            >
+              <div>
+                <span class="text-slate-400 block text-[10px]"
+                  >Active Vessels</span
+                >
+                <span class="font-bold text-slate-200">142 Cargo Ships</span>
+              </div>
+              <div class="border-l border-slate-700 pl-4">
+                <span class="text-slate-400 block text-[10px]"
+                  >Air Corridors</span
+                >
+                <span class="font-bold text-slate-200">89 Planes</span>
+              </div>
+              <div class="border-l border-slate-700 pl-4">
+                <span class="text-slate-400 block text-[10px]"
+                  >Current Status</span
+                >
+                <span class="font-bold text-emerald-400 flex items-center gap-1"
+                  ><i class="fa-solid fa-wifi text-[10px]"></i> Live Sync</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI ROUTE OPTIMIZATION & PREDICTIVE INSIGHTS MODULE (1 COL) -->
+        <div
+          class="glass-panel rounded-2xl border border-slate-800 p-5 flex flex-col justify-between"
+        >
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <div
+                class="p-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-500/20"
+              >
+                <i class="fa-solid fa-brain"></i>
+              </div>
+              <div>
+                <h2 class="text-base font-semibold text-slate-100">
+                  Smart AI Advisor
+                </h2>
+                <p class="text-xs text-slate-400">
+                  Autonomous route & risk mitigation Engine
+                </p>
+              </div>
+            </div>
+
+            <!-- AI Action Trigger Buttons -->
+            <div class="mt-4 space-y-2">
+              <button
+                onclick="runAiAction('fuel')"
+                class="w-full p-3 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-blue-500 text-left transition-all flex items-center justify-between group active:scale-[0.99]"
+              >
+                <div class="flex items-center gap-3">
+                  <i
+                    class="fa-solid fa-gas-pump text-blue-400 group-hover:scale-110 transition-transform"
+                  ></i>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200">
+                      Optimize Route for Fuel
+                    </div>
+                    <div class="text-[10px] text-slate-400">
+                      Re-route Atlantic shipping lanes
+                    </div>
+                  </div>
+                </div>
+                <i
+                  class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all"
+                ></i>
+              </button>
+
+              <button
+                onclick="runAiAction('weather')"
+                class="w-full p-3 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-amber-500 text-left transition-all flex items-center justify-between group active:scale-[0.99]"
+              >
+                <div class="flex items-center gap-3">
+                  <i
+                    class="fa-solid fa-cloud-bolt text-amber-400 group-hover:scale-110 transition-transform"
+                  ></i>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200">
+                      Predict Weather Delay Impact
+                    </div>
+                    <div class="text-[10px] text-slate-400">
+                      Pacific typhoon disturbance scan
+                    </div>
+                  </div>
+                </div>
+                <i
+                  class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-amber-400 group-hover:translate-x-1 transition-all"
+                ></i>
+              </button>
+
+              <button
+                onclick="runAiAction('maintenance')"
+                class="w-full p-3 rounded-xl bg-slate-900/90 border border-slate-700 hover:border-emerald-500 text-left transition-all flex items-center justify-between group active:scale-[0.99]"
+              >
+                <div class="flex items-center gap-3">
+                  <i
+                    class="fa-solid fa-wrench text-emerald-400 group-hover:scale-110 transition-transform"
+                  ></i>
+                  <div>
+                    <div class="text-xs font-semibold text-slate-200">
+                      Fleet Maintenance Telemetry
+                    </div>
+                    <div class="text-[10px] text-slate-400">
+                      Predictive engine overhaul scan
+                    </div>
+                  </div>
+                </div>
+                <i
+                  class="fa-solid fa-chevron-right text-xs text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all"
+                ></i>
+              </button>
+            </div>
+
+            <!-- Dynamic AI Output Display Panel -->
+            <div
+              id="ai-output-box"
+              class="mt-4 p-4 rounded-xl bg-slate-950/90 border border-slate-800 text-xs min-h-[140px] flex flex-col justify-between"
+            >
+              <div id="ai-output-content" class="space-y-2">
+                <div
+                  class="flex items-center gap-2 text-blue-400 font-semibold"
+                >
+                  <i class="fa-solid fa-sparkles animate-spin"></i>
+                  <span>AI Agent Online & Monitoring</span>
+                </div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">
+                  System currently executing real-time logistics optimization
+                  algorithms. Select an AI task above to generate route
+                  recommendations and cost savings estimates.
+                </p>
+              </div>
+              <div
+                class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-500"
+              >
+                <span>Latency: 14ms</span>
+                <span>Model: LogiTech Neural-v4</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. ACTIVE SHIPMENTS TABLE SECTION -->
+      <section
+        class="glass-panel rounded-2xl border border-slate-800 p-4 sm:p-6 space-y-4"
+      >
+        <!-- Table Controls & Filters -->
+        <div
+          class="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        >
+          <div>
+            <h2 class="text-lg font-bold text-slate-100">
+              Active Freight Deliveries
+            </h2>
+            <p class="text-xs text-slate-400">
+              Live IoT temperature, humidity, and location tracking dashboard
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Status Filter Dropdown -->
+            <div class="relative">
+              <select
+                id="status-filter"
+                onchange="filterShipments()"
+                class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="In Transit">In Transit</option>
+                <option value="Delivered">Delivered</option>
+                <option value="Delayed">Delayed</option>
+                <option value="Customs Hold">Customs Hold</option>
+              </select>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="relative">
+              <select
+                id="priority-filter"
+                onchange="filterShipments()"
+                class="bg-slate-900 border border-slate-700 text-slate-300 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"
+              >
+                <option value="ALL">All Priorities</option>
+                <option value="Critical">Critical Priority</option>
+                <option value="High">High Priority</option>
+                <option value="Standard">Standard Priority</option>
+              </select>
+            </div>
+
+            <button
+              onclick="resetFilters()"
+              class="text-xs text-slate-400 hover:text-slate-200 px-2 py-1"
+            >
+              <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Shipments Data Table -->
+        <div class="overflow-x-auto rounded-xl border border-slate-800/80">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead
+              class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800"
+            >
+              <tr>
+                <th class="px-4 py-3 font-semibold">Tracking ID</th>
+                <th class="px-4 py-3 font-semibold">Origin & Destination</th>
+                <th class="px-4 py-3 font-semibold">Carrier / Vehicle</th>
+                <th class="px-4 py-3 font-semibold">ETA</th>
+                <th class="px-4 py-3 font-semibold">IoT Telemetry</th>
+                <th class="px-4 py-3 font-semibold">Status</th>
+                <th class="px-4 py-3 font-semibold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody
+              id="shipments-table-body"
+              class="divide-y divide-slate-800/60 bg-slate-900/40"
+            >
+              <!-- Dynamic rows populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer
+      class="border-t border-slate-800/80 glass-panel py-4 px-6 text-center text-xs text-slate-500"
+    >
+      <div
+        class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2"
+      >
+        <div>&copy; 2026 LogiTech AI Systems Inc. All rights reserved.</div>
+        <div class="flex items-center gap-4 text-[11px] text-slate-400">
+          <span class="flex items-center gap-1.5"
+            ><span class="w-2 h-2 rounded-full bg-emerald-500"></span> API
+            Status: Operational</span
+          >
+          <span>Version 4.8.2-PRO</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- MODAL 1: CREATE NEW SHIPMENT -->
+    <div
+      id="new-shipment-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="glass-panel bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl animate-fade-in"
+      >
+        <div
+          class="flex items-center justify-between p-5 border-b border-slate-800"
+        >
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-lg bg-blue-500/10 text-blue-400">
+              <i class="fa-solid fa-box-archive"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-100">
+              Dispatch New Smart Cargo
+            </h3>
+          </div>
+          <button
+            onclick="closeModal('new-shipment-modal')"
+            class="text-slate-400 hover:text-white p-1"
+          >
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <form
+          id="create-shipment-form"
+          onsubmit="handleCreateShipment(event)"
+          class="p-6 space-y-4"
+        >
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >Sender Name / Origin Hub</label
+              >
+              <input
+                type="text"
+                id="form-sender"
+                required
+                placeholder="e.g., Tokyo Central Freight Hub"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >Receiver Destination</label
+              >
+              <input
+                type="text"
+                id="form-receiver"
+                required
+                placeholder="e.g., Hamburg Logistics Port"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >Cargo Type</label
+              >
+              <select
+                id="form-cargotype"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="Electronics">Electronics</option>
+                <option value="Perishable BioMed">Perishable BioMed</option>
+                <option value="Heavy Machinery">Heavy Machinery</option>
+                <option value="Hazardous Material">Hazardous Material</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >Weight (Tons)</label
+              >
+              <input
+                type="number"
+                id="form-weight"
+                step="0.1"
+                min="0.1"
+                required
+                placeholder="12.5"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >Priority Level</label
+              >
+              <select
+                id="form-priority"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="Critical">Critical Express</option>
+                <option value="High">High Priority</option>
+                <option value="Standard">Standard Freight</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >Preferred Carrier Mode</label
+              >
+              <select
+                id="form-carrier"
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              >
+                <option value="AeroFreight Express (Air)">
+                  AeroFreight Express (Air)
+                </option>
+                <option value="Pacific Ocean Shipping (Sea)">
+                  Pacific Ocean Shipping (Sea)
+                </option>
+                <option value="TransLogistics Ground (Truck)">
+                  TransLogistics Ground (Truck)
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1"
+                >ETA Date</label
+              >
+              <input
+                type="date"
+                id="form-eta"
+                required
+                class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div
+            class="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 flex items-center justify-between"
+          >
+            <span class="flex items-center gap-2"
+              ><i class="fa-solid fa-wand-magic-sparkles"></i> AI Optimal Mode
+              Suggestion:</span
+            >
+            <span class="font-bold text-blue-400" id="form-ai-suggestion"
+              >AeroFreight Express (Air)</span
+            >
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onclick="closeModal('new-shipment-modal')"
+              class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-slate-200 bg-slate-800"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md"
+            >
+              Dispatch Shipment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: DETAILED SHIPMENT MODAL -->
+    <div
+      id="details-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="glass-panel bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl animate-fade-in"
+      >
+        <div
+          class="flex items-center justify-between p-5 border-b border-slate-800"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="p-2 rounded-xl bg-blue-500/10 text-blue-400 font-mono text-xs font-bold"
+              id="modal-tracking-id"
+            >
+              #SH-0000
+            </div>
+            <div>
+              <h3 class="text-base font-bold text-slate-100" id="modal-title">
+                Shipment Journey Details
+              </h3>
+              <p class="text-xs text-slate-400" id="modal-subtitle">
+                Carrier: AeroFreight Line
+              </p>
+            </div>
+          </div>
+          <button
+            onclick="closeModal('details-modal')"
+            class="text-slate-400 hover:text-white p-1"
+          >
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-6">
+          <!-- Journey Timeline -->
+          <div>
+            <h4
+              class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3"
+            >
+              Journey Checkpoints
+            </h4>
+            <div
+              class="relative pl-6 border-l-2 border-slate-700 space-y-4 text-xs"
+            >
+              <div class="relative">
+                <span
+                  class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-slate-900"
+                ></span>
+                <div class="font-semibold text-slate-200">
+                  Origin Departure - Dispatched
+                </div>
+                <div class="text-[11px] text-slate-400" id="modal-origin">
+                  Tokyo Port, Japan
+                </div>
+                <div class="text-[10px] text-slate-500">
+                  Oct 18, 2026 - 08:30 AM
+                </div>
+              </div>
+              <div class="relative">
+                <span
+                  class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-blue-500 ring-4 ring-slate-900 animate-ping"
+                ></span>
+                <span
+                  class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-blue-500 ring-4 ring-slate-900"
+                ></span>
+                <div class="font-semibold text-blue-400">
+                  In Transit - Mid Route Telemetry Active
+                </div>
+                <div class="text-[11px] text-slate-300" id="modal-current-loc">
+                  Pacific Ocean Transit Sector 4
+                </div>
+                <div class="text-[10px] text-slate-500">
+                  Live Telemetry Synchronized
+                </div>
+              </div>
+              <div class="relative opacity-60">
+                <span
+                  class="absolute -left-[31px] top-0 w-3.5 h-3.5 rounded-full bg-slate-700 ring-4 ring-slate-900"
+                ></span>
+                <div class="font-semibold text-slate-300">
+                  Final Destination Hub
+                </div>
+                <div class="text-[11px] text-slate-400" id="modal-destination">
+                  Los Angeles Logistics Hub
+                </div>
+                <div class="text-[10px] text-slate-500" id="modal-eta">
+                  ETA: Oct 23, 2026
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- IoT Telemetry & Weather Conditions Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+              <h5
+                class="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-2"
+              >
+                <i class="fa-solid fa-microchip text-blue-400"></i> IoT Sensors
+                Data
+              </h5>
+              <div class="space-y-1.5 text-xs text-slate-400">
+                <div class="flex justify-between">
+                  <span>Cargo Temp:</span>
+                  <span class="text-slate-200 font-mono" id="modal-temp"
+                    >4.5 °C</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span>Humidity:</span>
+                  <span class="text-slate-200 font-mono" id="modal-humidity"
+                    >45%</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span>G-Force / Shock:</span>
+                  <span class="text-emerald-400 font-mono">0.02G (Normal)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800">
+              <h5
+                class="text-xs font-semibold text-slate-300 mb-2 flex items-center gap-2"
+              >
+                <i class="fa-solid fa-cloud-sun text-amber-400"></i> Route
+                Weather Telemetry
+              </h5>
+              <div class="space-y-1.5 text-xs text-slate-400">
+                <div class="flex justify-between">
+                  <span>Condition:</span>
+                  <span class="text-slate-200" id="modal-weather"
+                    >Clear Ocean Skies</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span>Wind Speed:</span>
+                  <span class="text-slate-200 font-mono">18 knots NW</span>
+                </div>
+                <div class="flex justify-between">
+                  <span>Delay Risk:</span>
+                  <span class="text-emerald-400 font-mono">Low (&lt; 2%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- IoT Chart -->
+          <div>
+            <h4 class="text-xs font-semibold text-slate-300 mb-2">
+              24hr Cold-Chain Temperature Sensor History (°C)
+            </h4>
+            <div
+              class="h-32 w-full bg-slate-950/60 rounded-xl p-2 border border-slate-800"
+            >
+              <canvas id="telemetryChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="flex items-center justify-end p-4 border-t border-slate-800 bg-slate-900/50"
+        >
+          <button
+            onclick="closeModal('details-modal')"
+            class="px-4 py-2 rounded-xl text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700"
+          >
+            Close Window
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & SIMULATION ENGINE -->
+    <script>
+      // Initial Dataset
+      let shipmentsData = [
+        {
+          id: "SH-8942",
+          origin: "Shanghai Port, China",
+          destination: "Rotterdam, Netherlands",
+          carrier: "Pacific Ocean Shipping (Sea)",
+          eta: "2026-10-24",
+          temp: "18.2°C",
+          humidity: "62%",
+          status: "Customs Hold",
+          priority: "Critical",
+          icon: "fa-ship",
+        },
+        {
+          id: "SH-9021",
+          origin: "Tokyo Narita, Japan",
+          destination: "Los Angeles LAX, USA",
+          carrier: "AeroFreight Express (Air)",
+          eta: "2026-10-22",
+          temp: "4.1°C",
+          humidity: "42%",
+          status: "In Transit",
+          priority: "High",
+          icon: "fa-plane",
+        },
+        {
+          id: "SH-7710",
+          origin: "Berlin Hub, Germany",
+          destination: "Madrid Dist. Center, Spain",
+          carrier: "TransLogistics Ground (Truck)",
+          eta: "2026-10-21",
+          temp: "2.5°C",
+          humidity: "38%",
+          status: "In Transit",
+          priority: "Critical",
+          icon: "fa-truck-front",
+        },
+        {
+          id: "SH-6504",
+          origin: "Singapore Port",
+          destination: "Sydney Harbor, Australia",
+          carrier: "Pacific Ocean Shipping (Sea)",
+          eta: "2026-10-26",
+          temp: "22.0°C",
+          humidity: "70%",
+          status: "In Transit",
+          priority: "Standard",
+          icon: "fa-ship",
+        },
+        {
+          id: "SH-5519",
+          origin: "Chicago Cargo Hub, USA",
+          destination: "Toronto Facility, Canada",
+          carrier: "TransLogistics Ground (Truck)",
+          eta: "2026-10-20",
+          temp: "15.0°C",
+          humidity: "40%",
+          status: "Delivered",
+          priority: "Standard",
+          icon: "fa-truck-front",
+        },
+        {
+          id: "SH-4402",
+          origin: "London Heathrow, UK",
+          destination: "Dubai World Central, UAE",
+          carrier: "AeroFreight Express (Air)",
+          eta: "2026-10-23",
+          temp: "8.4°C",
+          humidity: "48%",
+          status: "Delayed",
+          priority: "High",
+          icon: "fa-plane",
+        },
+      ];
+
+      let telemetryChartInstance = null;
+
+      // Initialize UI on DOM Ready
+      document.addEventListener("DOMContentLoaded", () => {
+        renderShipmentsTable(shipmentsData);
+        initMapCanvas();
+        initTelemetryChart();
+      });
+
+      // Search Engine
+      function handleSearch(query) {
+        const q = query.toLowerCase().trim();
+        const filtered = shipmentsData.filter(
+          (s) =>
+            s.id.toLowerCase().includes(q) ||
+            s.origin.toLowerCase().includes(q) ||
+            s.destination.toLowerCase().includes(q) ||
+            s.carrier.toLowerCase().includes(q),
+        );
+        renderShipmentsTable(filtered);
+      }
+
+      function focusTracking() {
+        const searchInput = document.getElementById("global-search");
+        searchInput.focus();
+        searchInput.classList.add("ring-2", "ring-blue-500");
+        setTimeout(
+          () => searchInput.classList.remove("ring-2", "ring-blue-500"),
+          2000,
+        );
+      }
+
+      // Table Filtering
+      function filterShipments() {
+        const statusVal = document.getElementById("status-filter").value;
+        const priorityVal = document.getElementById("priority-filter").value;
+
+        let filtered = shipmentsData.filter((item) => {
+          const matchStatus = statusVal === "ALL" || item.status === statusVal;
+          const matchPriority =
+            priorityVal === "ALL" || item.priority === priorityVal;
+          return matchStatus && matchPriority;
+        });
+
+        renderShipmentsTable(filtered);
+      }
+
+      function resetFilters() {
+        document.getElementById("status-filter").value = "ALL";
+        document.getElementById("priority-filter").value = "ALL";
+        document.getElementById("global-search").value = "";
+        renderShipmentsTable(shipmentsData);
+      }
+
+      // Render Table Data
+      function renderShipmentsTable(data) {
+        const tbody = document.getElementById("shipments-table-body");
+        tbody.innerHTML = "";
+
+        if (data.length === 0) {
+          tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-8 text-slate-500 text-xs">
+                            No active shipments matched your search filter criteria.
+                        </td>
+                    </tr>
+                `;
+          return;
+        }
+
+        data.forEach((s) => {
+          const tr = document.createElement("tr");
+          tr.className =
+            "hover:bg-slate-800/50 transition-colors group cursor-pointer";
+
+          // Status Badge CSS logic
+          let statusBadge = "";
+          if (s.status === "In Transit") {
+            statusBadge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5 w-max"><span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>In Transit</span>`;
+          } else if (s.status === "Delivered") {
+            statusBadge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 w-max"><i class="fa-solid fa-check text-[9px]"></i>Delivered</span>`;
+          } else if (s.status === "Delayed") {
+            statusBadge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5 w-max"><i class="fa-solid fa-clock text-[9px]"></i>Delayed</span>`;
+          } else {
+            statusBadge = `<span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1.5 w-max"><i class="fa-solid fa-triangle-exclamation text-[9px]"></i>Customs Hold</span>`;
+          }
+
+          tr.innerHTML = `
+                    <td class="px-4 py-3 font-mono text-blue-400 font-medium">${s.id}</td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-200">${s.origin}</div>
+                        <div class="text-[10px] text-slate-400 flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-right text-[8px]"></i> ${s.destination}
+                        </div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid ${s.icon} text-slate-400"></i>
+                            <span class="text-slate-300">${s.carrier}</span>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-300 font-mono text-[11px]">${s.eta}</td>
+                    <td class="px-4 py-3">
+                        <div class="text-[11px] font-mono text-slate-300">Temp: ${s.temp}</div>
+                        <div class="text-[10px] text-slate-500">Hum: ${s.humidity}</div>
+                    </td>
+                    <td class="px-4 py-3">${statusBadge}</td>
+                    <td class="px-4 py-3 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="event.stopPropagation(); openShipmentDetails('${s.id}')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-300 transition-colors" title="View Telemetry Details">
+                                <i class="fa-solid fa-circle-info text-xs"></i>
+                            </button>
+                            <button onclick="event.stopPropagation(); triggerRowAi('${s.id}')" class="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-600 text-blue-400 hover:text-white transition-colors" title="AI Route Optimization">
+                                <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+          tr.addEventListener("click", () => openShipmentDetails(s.id));
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Toggle Notifications Panel
+      function toggleNotifications() {
+        const panel = document.getElementById("notifications-panel");
+        panel.classList.toggle("hidden");
+      }
+
+      // Modal Controls
+      function openModal(id) {
+        document.getElementById(id).classList.remove("hidden");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.add("hidden");
+      }
+
+      // Detailed Modal Populator
+      function openShipmentDetails(id) {
+        const item = shipmentsData.find((s) => s.id === id);
+        if (!item) return;
+
+        document.getElementById("modal-tracking-id").innerText = `#${item.id}`;
+        document.getElementById("modal-title").innerText =
+          `${item.origin.split(",")[0]} to ${item.destination.split(",")[0]}`;
+        document.getElementById("modal-subtitle").innerText =
+          `Carrier: ${item.carrier}`;
+        document.getElementById("modal-origin").innerText = item.origin;
+        document.getElementById("modal-destination").innerText =
+          item.destination;
+        document.getElementById("modal-eta").innerText = `ETA: ${item.eta}`;
+        document.getElementById("modal-temp").innerText = item.temp;
+        document.getElementById("modal-humidity").innerText = item.humidity;
+
+        openModal("details-modal");
+
+        // Re-render telemetry Chart
+        setTimeout(initTelemetryChart, 100);
+      }
+
+      // Trigger AI Action from Table
+      function triggerRowAi(id) {
+        const aiBox = document.getElementById("ai-output-content");
+        aiBox.innerHTML = `
+                <div class="flex items-center gap-2 text-blue-400 font-semibold animate-pulse">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>Analyzing Shipment #${id}...</span>
+                </div>
+                <p class="text-slate-300 text-[11px] leading-relaxed mt-1">
+                    AI evaluated real-time wind patterns & border congestion for <span class="text-blue-400 font-mono">#${id}</span>. Rerouting via secondary hub reduces transit time by <strong>4.2 hours</strong> and saves <strong>8% fuel usage</strong>.
+                </p>
+            `;
+      }
+
+      // AI Advisor Main Panel Triggers
+      function runAiAction(type) {
+        const aiBox = document.getElementById("ai-output-content");
+
+        if (type === "fuel") {
+          aiBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-blue-400 font-semibold">
+                        <i class="fa-solid fa-gas-pump"></i>
+                        <span>Fuel Optimization Calculated</span>
+                    </div>
+                    <p class="text-slate-300 text-[11px] leading-relaxed mt-1">
+                        By adjusting sea cruising speed from 19 to 16.5 knots on Pacific cargo corridors, overall fleet carbon footprint is reduced by <strong>18.4 Metric Tons</strong> with zero impact on delivery SLA.
+                    </p>
+                `;
+        } else if (type === "weather") {
+          aiBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-amber-400 font-semibold">
+                        <i class="fa-solid fa-cloud-bolt"></i>
+                        <span>Weather Impact Scan Completed</span>
+                    </div>
+                    <p class="text-slate-300 text-[11px] leading-relaxed mt-1">
+                        Tropical disturbance detected near Philippine Sea. AI recommends auto-diverting 3 container vessels 120 nautical miles east to avoid 14-hour weather delays.
+                    </p>
+                `;
+        } else if (type === "maintenance") {
+          aiBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-emerald-400 font-semibold">
+                        <i class="fa-solid fa-wrench"></i>
+                        <span>Predictive Fleet Diagnosis</span>
+                    </div>
+                    <p class="text-slate-300 text-[11px] leading-relaxed mt-1">
+                        Telemetry analysis detected vibration anomalies in TransLogistics Freight Truck <span class="font-mono text-emerald-400">#TRK-408</span>. Maintenance alert dispatched for Berlin terminal service stop.
+                    </p>
+                `;
+        }
+      }
+
+      // Handle Dispatch New Shipment
+      function handleCreateShipment(event) {
+        event.preventDefault();
+
+        const sender = document.getElementById("form-sender").value;
+        const receiver = document.getElementById("form-receiver").value;
+        const carrier = document.getElementById("form-carrier").value;
+        const priority = document.getElementById("form-priority").value;
+        const eta = document.getElementById("form-eta").value;
+
+        const newId = `SH-${Math.floor(1000 + Math.random() * 9000)}`;
+        let icon = "fa-truck-front";
+        if (carrier.includes("Air")) icon = "fa-plane";
+        if (carrier.includes("Sea")) icon = "fa-ship";
+
+        const newShipment = {
+          id: newId,
+          origin: sender,
+          destination: receiver,
+          carrier: carrier,
+          eta: eta || "2026-10-25",
+          temp: "4.8°C",
+          humidity: "44%",
+          status: "In Transit",
+          priority: priority,
+          icon: icon,
+        };
+
+        shipmentsData.unshift(newShipment);
+        renderShipmentsTable(shipmentsData);
+
+        // Increment stat
+        const activeStat = document.getElementById("stat-active");
+        activeStat.innerText = (
+          parseInt(activeStat.innerText.replace(",", "")) + 1
+        ).toLocaleString();
+
+        closeModal("new-shipment-modal");
+        document.getElementById("create-shipment-form").reset();
+      }
+
+      // ==========================================
+      // CANVAS LIVE MAP SIMULATION ENGINE
+      // ==========================================
+      function initMapCanvas() {
+        const canvas = document.getElementById("mapCanvas");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+          canvas.width = canvas.parentElement.clientWidth;
+          canvas.height = canvas.parentElement.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener("resize", resizeCanvas);
+
+        // Simulation Nodes & Routes
+        const nodes = [
+          { x: 0.18, y: 0.4, label: "North America" },
+          { x: 0.48, y: 0.3, label: "Europe" },
+          { x: 0.78, y: 0.42, label: "Asia Tokyo" },
+          { x: 0.82, y: 0.75, label: "Australia" },
+          { x: 0.32, y: 0.72, label: "South America" },
+        ];
+
+        const routes = [
+          { from: 0, to: 1, type: "air", speed: 0.0015, progress: 0.2 },
+          { from: 1, to: 2, type: "sea", speed: 0.0008, progress: 0.6 },
+          { from: 2, to: 3, type: "sea", speed: 0.001, progress: 0.4 },
+          { from: 0, to: 4, type: "truck", speed: 0.0012, progress: 0.8 },
+          { from: 2, to: 0, type: "air", speed: 0.002, progress: 0.1 },
+        ];
+
+        function animateMap() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          const w = canvas.width;
+          const h = canvas.height;
+
+          // Draw Background Tech Grid Points
+          ctx.fillStyle = "rgba(51, 65, 85, 0.3)";
+          for (let x = 20; x < w; x += 30) {
+            for (let y = 20; y < h; y += 30) {
+              ctx.fillRect(x, y, 1.5, 1.5);
+            }
+          }
+
+          // Draw Routes Arc Lines
+          routes.forEach((route) => {
+            const start = nodes[route.from];
+            const end = nodes[route.to];
+
+            const sx = start.x * w;
+            const sy = start.y * h;
+            const ex = end.x * w;
+            const ey = end.y * h;
+
+            // Route line
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.strokeStyle =
+              route.type === "air"
+                ? "rgba(59, 130, 246, 0.3)"
+                : route.type === "sea"
+                  ? "rgba(20, 184, 166, 0.3)"
+                  : "rgba(245, 158, 11, 0.3)";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Move progress particle (shipments)
+            route.progress += route.speed;
+            if (route.progress > 1) route.progress = 0;
+
+            const currX = sx + (ex - sx) * route.progress;
+            const currY = sy + (ey - sy) * route.progress;
+
+            // Draw active moving node indicator
+            ctx.beginPath();
+            ctx.arc(currX, currY, 5, 0, Math.PI * 2);
+            ctx.fillStyle =
+              route.type === "air"
+                ? "#3b82f6"
+                : route.type === "sea"
+                  ? "#14b8a6"
+                  : "#f59e0b";
+            ctx.fill();
+
+            // Pulse ring
+            ctx.beginPath();
+            ctx.arc(currX, currY, 9, 0, Math.PI * 2);
+            ctx.strokeStyle =
+              route.type === "air"
+                ? "rgba(59, 130, 246, 0.5)"
+                : "rgba(20, 184, 166, 0.5)";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          });
+
+          // Draw Regional Hubs
+          nodes.forEach((node) => {
+            const nx = node.x * w;
+            const ny = node.y * h;
+
+            ctx.beginPath();
+            ctx.arc(nx, ny, 6, 0, Math.PI * 2);
+            ctx.fillStyle = "#1e293b";
+            ctx.fill();
+            ctx.strokeStyle = "#64748b";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Label
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "10px Inter, sans-serif";
+            ctx.fillText(node.label, nx - 25, ny + 18);
+          });
+
+          requestAnimationFrame(animateMap);
+        }
+
+        animateMap();
+      }
+
+      // ==========================================
+      // CHART.JS TELEMETRY GRAPH
+      // ==========================================
+      function initTelemetryChart() {
+        const ctx = document.getElementById("telemetryChart");
+        if (!ctx) return;
+
+        if (telemetryChartInstance) {
+          telemetryChartInstance.destroy();
+        }
+
+        telemetryChartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: [
+              "00:00",
+              "04:00",
+              "08:00",
+              "12:00",
+              "16:00",
+              "20:00",
+              "24:00",
+            ],
+            datasets: [
+              {
+                label: "Cargo Temperature (°C)",
+                data: [4.1, 4.3, 4.0, 4.8, 4.2, 4.1, 4.2],
+                borderColor: "#3b82f6",
+                backgroundColor: "rgba(59, 130, 246, 0.1)",
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3,
+                pointBackgroundColor: "#3b82f6",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+            },
+            scales: {
+              x: {
+                grid: { color: "rgba(255, 255, 255, 0.05)" },
+                ticks: { color: "#64748b", font: { size: 9 } },
+              },
+              y: {
+                grid: { color: "rgba(255, 255, 255, 0.05)" },
+                ticks: { color: "#64748b", font: { size: 9 } },
+                min: 0,
+                max: 8,
+              },
+            },
+          },
+        });
+      }
+    </script>
+  </body>
+</html>
